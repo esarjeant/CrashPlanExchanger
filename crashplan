@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# CrashPlan Exchanger
+#
+# Scripted exchange for identifying one or more CrashPlan .ui_info configuration files.
+# This is then able to switch between these multiple files.
+#
+# AUTHOR: Eric W. Sarjeant <eric@sarjeant.com>
+#         https://github.com/esarjeant/CrashPlanExchanger
+#
+CP_HOME='/Library/Application Support/CrashPlan'
+CP_CONFIG="default"
+CP_FILE=".ui_info"
+
+cd "$CP_HOME"
+
+if [ ! -z "$1" ]; then
+    CP_CONFIG=$1
+fi
+
+echo CP_CONFIG=${CP_CONFIG}
+CP_CONFIG_FILE="${CP_FILE}_${CP_CONFIG}"
+
+if [ ! -f $CP_FILE ]; then
+    ln -s ${CP_CONFIG_FILE} ${CP_FILE}
+fi
+
+if [ ! -L $CP_FILE ]; then
+    cat <<EOF
+CrashPlan Exchanger
+
+*** ERROR: Configuration file ${CP_FILE} is not a symlink.
+
+To configure the CrashPlan Exchanger script:
+
+1. Move your existing ${CP_FILE} in ${CP_HOME} to "${CP_FILE}.default"
+
+2. Create additional configuration files for alternate hosts. These should look like
+   ${CP_FILE}.myhost. The contents of these files will come from the .ui_info files
+   on the original host with some modification.
+
+   Here is a typical entry:
+
+       [port],b25fbb7f-f1bb-47d9-945c-c53b123df279,localhost
+
+   [port]  Local port to use for this host. Each host should get a unique port number locally;
+           recommend starting at 4200 but remember that 4243 is reserved if you are running
+           CrashPlan locally.
+
+   Do not touch the UUID in the middle, this must be the UUID from the remote instance. The
+   location varies depending on operating system:
+
+     Windows 7+   C:\\ProgramData\\CrashPlan\\.ui_info
+     Windows XP   C:\\Documents and Settings\\All Users\\Application Data\\CrashPlan\\.ui.info
+     OS X         ${CP_HOME}/${CP_FILE}
+     Linux        /var/lib/crashplan/.ui_info
+     Solaris      /var/lib/crashplan/.ui_info
+
+3. Launch the script with alternate systems based on filename.
+
+A typical invocation would look like so:
+
+$0 myserver
+
+EOF
+    exit 1
+fi
+
+echo "Using configuration file: $CP_CONFIG_FILE"
+
+if [ -r $CP_CONFIG_FILE ]
+then
+
+    echo "Starting Crashplan with $CP_CONFIG_FILE"
+    ln -f -s $CP_CONFIG_FILE $CP_FILE
+
+    CP_PORT=`head -1 ${CP_CONFIG_FILE} | cut -f1 -d,`
+    CP_HOST=`echo $CP_CONFIG_FILE | cut -f3 -d_`
+
+    if [ $CP_PORT != "4243" ]
+    then
+	echo "Starting SSH tunnel on ${CP_PORT} for ${CP_HOST}"
+        ssh -N -L ${CP_PORT}:localhost:4243 ${CP_HOST} & export SSH_PID=$! || exit 1
+    fi
+
+    # launch CrashPlan...
+    /Applications/CrashPlan.app/Contents/MacOS/CrashPlan 2>&1> /dev/null
+
+    # cleanup
+    echo SSH_PID=$SSH_PID
+    if [ ! -z "$SSH_PID" ]
+    then
+        kill $SSH_PID && echo "SSH Tunnel Terminated for ${CP_CONFIG_FILE}"
+    fi
+
+    CP_CONFIG_FILE=${CP_FILE}_default
+    if [ -f $CP_CONFIG_FILE ]
+    then
+        ln -f -s $CP_CONFIG_FILE $CP_FILE
+    fi
+
+else
+   echo "Configuration file not found: ${CP_HOME}/${CP_CONFIG_FILE}"
+   exit 1
+fi

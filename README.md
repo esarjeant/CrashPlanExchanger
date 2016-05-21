@@ -11,7 +11,7 @@ devices like Drobo.
 ## Configuration
 To configure the CrashPlan Exchanger script:
 
-1. Move your existing `.ui_info` to `.ui_info.default`
+1. Move your existing `.ui_info` to `.ui_info_default`
 2. Create additional configuration files for alternate hosts as `.ui_info_[host-or-IP]`. 
 3. Launch the script with alternate systems based on filename.
  

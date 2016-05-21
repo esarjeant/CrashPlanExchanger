@@ -33,7 +33,7 @@ CrashPlan Exchanger
 
 To configure the CrashPlan Exchanger script:
 
-1. Move your existing ${CP_FILE} in ${CP_HOME} to "${CP_FILE}.default"
+1. Move your existing ${CP_FILE} in ${CP_HOME} to "${CP_FILE}_default"
 
 2. Create additional configuration files for alternate hosts. These should look like
    ${CP_FILE}.myhost. The contents of these files will come from the .ui_info files

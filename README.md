@@ -48,7 +48,7 @@ Once the file is local, update to use a different port number.
 Modify in this example `.ui_info_myserver` with `[port]` to use for this host locally. Each host should get a 
 unique port number locally; recommend starting at 4200 but remember that 4243 is reserved and cannot be used.
 
-In call cases the `host` is parsed from the `.ui_info` filename; for example, for the host `10.0.0.10`
+In all cases the `host` is parsed from the `.ui_info` filename; for example, for the host `10.0.0.10`
 the file would need to be `.ui_info_10.0.0.10`.
 
      
